@@ -1,0 +1,9 @@
+menu "Aplication Configuration"
+    config FW_VERSION
+        string "Firmware Version"
+        default "v1.0.0"
+    config DEVICE_NAME
+        string "Device Name"
+        default "BROADCASTER"
+endmenu
+source "Kconfig.zephyr"
