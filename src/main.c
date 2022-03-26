@@ -16,6 +16,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 
+#define MS_TO_INTERVAL(ms)  (ms*1.6)
 /*
  * Get button configuration from the devicetree sw0 alias. This is mandatory.
  */
@@ -24,6 +25,7 @@
 #error "Unsupported board: sw0 devicetree alias is not defined"
 #endif
 
+#define FW_VERSION CONFIG_FW_VERSION
 #define DEVICE_NAME  CONFIG_DEVICE_NAME
 #define DEVICE_NAME_LENGTH  sizeof(DEVICE_NAME) - 1
 
@@ -100,9 +102,19 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
-	/* Start advertising */
-	err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad),
-					sd, ARRAY_SIZE(sd));
+	/**Start advertising
+	 * Non-connectable
+	 * Min Advertising interval: 50 ms.
+	 * Max Adversiting interval: 100 ms.
+	 * Peer Address: Null
+	 */
+	err = bt_le_adv_start(
+		BT_LE_ADV_PARAM(0, MS_TO_INTERVAL(50), MS_TO_INTERVAL(100), NULL),
+		ad,
+		ARRAY_SIZE(ad),
+		sd,
+		ARRAY_SIZE(sd)
+	);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
@@ -113,7 +125,7 @@ void main(void)
 	*/
 	buttonSetup(&userButton, &buttonCallbackData);
 
-	printk("Firmware Version: %s\n", CONFIG_FW_VERSION);
+	printk("Firmware Version: %s\n", FW_VERSION);
 	while(1){
 
 		printk("Advertising data: 0x%02X%02X\n", mfg_data[1], mfg_data[0]);
