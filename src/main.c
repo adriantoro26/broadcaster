@@ -29,6 +29,8 @@
 #define DEVICE_NAME  CONFIG_DEVICE_NAME
 #define DEVICE_NAME_LENGTH  sizeof(DEVICE_NAME) - 1
 
+struct k_work workItem;
+
 /* Button definition */
 static const struct gpio_dt_spec userButton = GPIO_DT_SPEC_GET_OR(SW0_NODE, gpios,
 							      {0});
@@ -50,10 +52,33 @@ static const struct bt_data sd[] = {
 };
 
 /**
+ * Job which updates BLE advertising params
+*/
+void updateBleAdvParams(struct k_work *work){
+	int err;
+
+	/**
+	 * Update BLE adversiting packets
+	*/
+	err = bt_le_adv_update_data(
+		ad,
+		ARRAY_SIZE(ad),
+		sd,
+		ARRAY_SIZE(sd)
+	);
+
+	if (err) {
+		printk("Failed to update advertsing data (err %d)\n", err);
+		return;
+	}
+}
+
+/**
  * @brief Button press handler.
 */
 void buttonPressed(struct device const * const dev, struct gpio_callback * const cb, uint32_t pins){
 	counter++;
+	k_work_submit(&workItem);
 }
 
 /**
@@ -119,6 +144,11 @@ void main(void)
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
 	}
+
+	/**
+	 * Setup a work item
+	*/
+	k_work_init(&workItem, updateBleAdvParams);
 
 	/**
 	 * Configure button ISR
